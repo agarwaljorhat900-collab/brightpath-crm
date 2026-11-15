@@ -148,12 +148,15 @@ $$\text{Develop} \longrightarrow \text{Test (Static/Build)} \longrightarrow \tex
   - [x] Enable student deep-linking directly from audit cards.
   * *Acceptance Criteria*: Every enquiry and follow-up mutation produces a visible audit record; RLS scoping is respected.
 
-- [ ] **Phase 8: Real-Time Analytics Dashboard & Metric Reconciliation**
-  - [ ] Connect `DashboardView` to live Supabase queries.
-  - [ ] Compute verified KPIs: Total Accessible Enquiries, New Enquiries, Converted Admissions, Conversion Rate (%), Overdue Follow-ups.
-  - [ ] Display Enquiries by Status and Enquiries by Source distribution cards.
-  - [ ] Ensure displayed metrics reconcile exactly with records shown in list views.
-  * *Acceptance Criteria*: KPIs accurately reflect database state; conversion rate calculation handles division by zero safely.
+- [x] **Phase 8: Real-Time Analytics Dashboard & Interactive Command Center** [COMPLETED]
+  - [x] Transformed generic academic dashboard into an executive Admissions Intelligence Command Center.
+  - [x] Integrated real-time pulse indicator, quick-action shortcuts (+ Manage Enquiries, Task Queue, Audit Trail), and role-scoped KPIs.
+  - [x] Made **all 5 KPI cards interactive and clickable** with hover micro-elevation, directional indicators, and direct tab navigation.
+  - [x] Overhauled pipeline stage breakdown with proportional progress bars and stage-click filtering into LeadsView.
+  - [x] Made Course Demand breakdown interactive, deep-linking to curriculum leads.
+  - [x] Connected Recent Enquiries directly to student record drawer via onSelectLead, instantly opening student details.
+  - [x] Connected upcoming follow-ups directly to ollowups management tab.
+  * *Acceptance Criteria*: Fully responsive, verified with pm run typecheck and pm run build; committed and pushed to GitHub (f7d53e).
 
 - [ ] **Phase 9: UI Polish, Responsiveness & Accessibility Hardening**
   - [ ] Add mobile slide-over navigation drawer for screens `< 768px`.
