@@ -650,3 +650,85 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ==============================================================================
+   BESPOKE PROFESSIONAL SAAS UI & MOTION REFINEMENTS
+   ============================================================================== */
+
+:root {
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Micro-animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes modalSpringIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-content {
+  animation: modalSpringIn 0.25s var(--ease-spring);
+}
+
+.detail-drawer {
+  animation: slideInRight 0.3s var(--ease-spring);
+}
+
+/* Tactile button feedback */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-outline:active {
+  transform: scale(0.98);
+}
+
+/* Smooth Table Row Elevation */
+.leads-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.leads-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Refined Stat Cards */
+.stat-card {
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring), border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}

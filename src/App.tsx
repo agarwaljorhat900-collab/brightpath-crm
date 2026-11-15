@@ -12,6 +12,7 @@ import { useAuth } from './context/AuthContext';
 import { leadService } from './services/leadService';
 import { followUpService } from './services/followUpService';
 import { activityService } from './services/activityService';
+import { profileService } from './services/profileService';
 import {
   MOCK_LEADS,
   MOCK_FOLLOW_UPS,
@@ -40,36 +41,53 @@ export default function App() {
   const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
   const [followUps, setFollowUps] = useState<FollowUp[]>(MOCK_FOLLOW_UPS);
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
-  const [profiles] = useState(MOCK_PROFILES);
+  const [profiles, setProfiles] = useState(MOCK_PROFILES);
+
+  // UUID helper
+  const isValidUUID = (val?: string | null): boolean => {
+    if (!val) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  };
 
   // Load from live Supabase if connected
   const refreshLiveSupabaseData = useCallback(async () => {
     if (!isSupabaseConnected) return;
 
     try {
-      const [leadsRes, followUpsRes, activitiesRes] = await Promise.all([
+      const [leadsRes, followUpsRes, activitiesRes, profilesRes] = await Promise.all([
         leadService.fetchLeads(),
         followUpService.fetchFollowUps(),
-        activityService.fetchActivities()
+        activityService.fetchActivities(),
+        profileService.fetchProfiles()
       ]);
 
-      if (leadsRes.data && leadsRes.data.length > 0) {
+      if (user && leadsRes.data !== null) {
         setLeads(leadsRes.data);
       }
-      if (followUpsRes.data && followUpsRes.data.length > 0) {
+      if (user && followUpsRes.data !== null) {
         setFollowUps(followUpsRes.data);
       }
-      if (activitiesRes.data && activitiesRes.data.length > 0) {
+      if (user && activitiesRes.data !== null) {
         setActivities(activitiesRes.data);
+      }
+      if (profilesRes.data && profilesRes.data.length > 0) {
+        setProfiles(profilesRes.data);
       }
     } catch (err) {
       console.warn('Could not fetch from live Supabase:', err);
     }
-  }, [isSupabaseConnected]);
+  }, [isSupabaseConnected, user]);
 
   useEffect(() => {
-    refreshLiveSupabaseData();
-  }, [refreshLiveSupabaseData]);
+    if (user) {
+      refreshLiveSupabaseData();
+    } else if (isGuestDemoMode) {
+      setLeads(MOCK_LEADS);
+      setFollowUps(MOCK_FOLLOW_UPS);
+      setActivities(MOCK_ACTIVITIES);
+      setProfiles(MOCK_PROFILES);
+    }
+  }, [user, isGuestDemoMode, refreshLiveSupabaseData]);
 
   // Current active user name & id
   const activeUserId = user?.id || (currentRole === 'admin' ? 'p-1' : currentRole === 'manager' ? 'p-2' : 'p-3');
@@ -130,20 +148,32 @@ export default function App() {
     };
     setActivities((prev) => [newActivity, ...prev]);
 
-    // Live Supabase persist if configured
-    if (isSupabaseConnected) {
-      const { data: dbLead } = await leadService.createLead({
-        ...leadData,
-        created_by: activeUserId
-      });
+    // Live Supabase persist if configured and user is signed in
+    if (isSupabaseConnected && user) {
+      const dbPayload = {
+        full_name: leadData.full_name,
+        phone: leadData.phone,
+        email: leadData.email || null,
+        course_interest: leadData.course_interest,
+        source: leadData.source,
+        status: leadData.status,
+        notes: leadData.notes || null,
+        assigned_to: isValidUUID(leadData.assigned_to) ? leadData.assigned_to : user.id,
+        created_by: user.id
+      };
+
+      const { data: dbLead, error } = await leadService.createLead(dbPayload);
       if (dbLead) {
+        setLeads((prev) => [dbLead, ...prev.filter((l) => l.id !== localId)]);
         await activityService.logActivity({
           lead_id: dbLead.id,
-          actor_id: activeUserId,
+          actor_id: user.id,
           activity_type: 'lead_created',
           description: `New enquiry registered for ${dbLead.full_name} (${dbLead.course_interest}) via ${dbLead.source}`
         });
         refreshLiveSupabaseData();
+      } else if (error) {
+        console.error('Supabase lead insertion error:', error.message);
       }
     }
   };
@@ -184,14 +214,15 @@ export default function App() {
     setActivities((prev) => [newActivity, ...prev]);
 
     // Live Supabase update
-    if (isSupabaseConnected) {
+    if (isSupabaseConnected && user && isValidUUID(leadId)) {
       await leadService.updateLeadStatus(leadId, newStatus, lostReason);
       await activityService.logActivity({
         lead_id: leadId,
-        actor_id: activeUserId,
+        actor_id: user.id,
         activity_type: 'status_changed',
         description
       });
+      refreshLiveSupabaseData();
     }
   };
 
@@ -226,21 +257,26 @@ export default function App() {
     setActivities((prev) => [newActivity, ...prev]);
 
     // Live Supabase persist
-    if (isSupabaseConnected) {
-      await followUpService.createFollowUp({
+    if (isSupabaseConnected && user && isValidUUID(leadId)) {
+      const followUpPayload = {
         lead_id: leadId,
-        assigned_to: targetLead.assigned_to || activeUserId,
+        assigned_to: isValidUUID(targetLead.assigned_to) ? targetLead.assigned_to : user.id,
         due_at: new Date(dueAt).toISOString(),
         note,
-        status: 'pending',
-        created_by: activeUserId
-      });
+        status: 'pending' as FollowUpStatus,
+        created_by: user.id
+      };
+      const { data: dbFollowUp } = await followUpService.createFollowUp(followUpPayload);
+      if (dbFollowUp) {
+        setFollowUps((prev) => [dbFollowUp, ...prev.filter((f) => f.id !== newFollowUp.id)]);
+      }
       await activityService.logActivity({
         lead_id: leadId,
-        actor_id: activeUserId,
+        actor_id: user.id,
         activity_type: 'follow_up_scheduled',
         description: `Follow-up scheduled for ${new Date(dueAt).toLocaleString()}: "${note}"`
       });
+      refreshLiveSupabaseData();
     }
   };
 
@@ -278,14 +314,15 @@ export default function App() {
       };
       setActivities((prev) => [newActivity, ...prev]);
 
-      if (isSupabaseConnected) {
+      if (isSupabaseConnected && user && isValidUUID(followUpId)) {
         await followUpService.updateFollowUpStatus(followUpId, nextStatus);
         await activityService.logActivity({
           lead_id: followUpItem.lead_id,
-          actor_id: activeUserId,
+          actor_id: user.id,
           activity_type: 'follow_up_completed',
           description
         });
+        refreshLiveSupabaseData();
       }
     }
   };
