@@ -9,6 +9,15 @@ export const COURSES = [
   'Mobile App Development (React Native)'
 ] as const;
 
+export const COURSE_TUITION_MAP: Record<string, number> = {
+  'Full Stack Web Development': 45000,
+  'Data Science & AI': 55000,
+  'Cloud & DevOps Engineering': 50000,
+  'Cybersecurity Specialist': 52000,
+  'UI/UX Design Bootcamp': 38000,
+  'Mobile App Development (React Native)': 42000
+};
+
 export const LEAD_SOURCES = [
   'Website Form',
   'Walk-in',

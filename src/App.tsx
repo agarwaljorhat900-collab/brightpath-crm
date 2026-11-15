@@ -551,6 +551,7 @@ export default function App() {
                 <DashboardView
                   leads={accessibleLeads}
                   followUps={accessibleFollowUps}
+                  profiles={profiles}
                   currentRole={currentRole}
                   onNavigateTab={setActiveTab}
                   onSelectLead={handleSelectLeadFromAnywhere}
