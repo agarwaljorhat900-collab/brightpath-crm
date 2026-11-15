@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Shield, LogIn, LogOut, User } from 'lucide-react';
+import { Search, Plus, Shield, LogIn, LogOut, Menu } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,6 +9,8 @@ interface TopBarProps {
   onOpenCreateLead: () => void;
   currentRole: UserRole;
   onOpenAuthModal: () => void;
+  onToggleMenu: () => void;
+  menuOpen?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -16,12 +18,25 @@ export const TopBar: React.FC<TopBarProps> = ({
   setSearchQuery,
   onOpenCreateLead,
   currentRole,
-  onOpenAuthModal
+  onOpenAuthModal,
+  onToggleMenu,
+  menuOpen
 }) => {
   const { user, profile, signOut, isSupabaseConnected } = useAuth();
 
   return (
     <header className="crm-topbar">
+      <button
+        type="button"
+        className="menu-toggle"
+        onClick={onToggleMenu}
+        aria-label="Open navigation menu"
+        aria-expanded={!!menuOpen}
+        aria-controls="app-sidebar"
+      >
+        <Menu size={20} />
+      </button>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
         <div className="search-box" style={{ maxWidth: '420px', width: '100%' }}>
           <Search size={16} color="#64748b" />
@@ -37,6 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div
+          className="scope-chip"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -57,7 +73,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Auth Action */}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}>
+            <span
+              className="topbar-username"
+              style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600 }}
+            >
               {profile?.full_name || user.email?.split('@')[0]}
             </span>
             <button

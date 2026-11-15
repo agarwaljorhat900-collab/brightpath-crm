@@ -51,9 +51,10 @@ export const configStatus = checkSupabaseConfig();
 
 export const supabase: SupabaseClient | null = configStatus.isConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true
-      }
-    })
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  })
   : null;
+export const isSupabaseConfigured = Boolean(supabase);

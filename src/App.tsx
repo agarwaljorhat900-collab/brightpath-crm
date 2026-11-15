@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Lock, ShieldCheck, ArrowRight, Eye } from 'lucide-react';
+import { Lock, ArrowRight, AlertTriangle, X } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { ConfigWarning } from './components/common/ConfigWarning';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AuthModal } from './components/auth/AuthModal';
 import { DashboardView } from './features/dashboard/DashboardView';
 import { LeadsView } from './features/leads/LeadsView';
@@ -19,15 +20,22 @@ import {
   MOCK_ACTIVITIES,
   MOCK_PROFILES
 } from './services/mockData';
-import { Lead, FollowUp, Activity, UserRole, LeadStatus, FollowUpStatus } from './types';
+import { Lead, FollowUp, Activity, LeadStatus, FollowUpStatus } from './types';
 import './App.css';
 
-export default function App() {
+// True when a service call returned an { error } object that is set
+const hasError = (res: unknown): boolean =>
+  !!res && typeof res === 'object' && 'error' in res && !!(res as { error?: unknown }).error;
+
+function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [isGuestDemoMode, setIsGuestDemoMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const {
     user,
@@ -42,6 +50,17 @@ export default function App() {
   const [followUps, setFollowUps] = useState<FollowUp[]>(MOCK_FOLLOW_UPS);
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
   const [profiles, setProfiles] = useState(MOCK_PROFILES);
+
+  const showNotice = useCallback((message: string) => {
+    setNotice(message);
+  }, []);
+
+  // Auto-hide the friendly message after 6 seconds
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
 
   // UUID helper
   const isValidUUID = (val?: string | null): boolean => {
@@ -61,6 +80,13 @@ export default function App() {
         profileService.fetchProfiles()
       ]);
 
+      if (
+        user &&
+        (hasError(leadsRes) || hasError(followUpsRes) || hasError(activitiesRes) || hasError(profilesRes))
+      ) {
+        showNotice("Some data couldn't be loaded. Check your connection and try again.");
+      }
+
       if (user && leadsRes.data !== null) {
         setLeads(leadsRes.data);
       }
@@ -75,8 +101,51 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Could not fetch from live Supabase:', err);
+      if (user) {
+        showNotice("Couldn't reach the server. Check your connection and try again.");
+      }
     }
-  }, [isSupabaseConnected, user]);
+  }, [isSupabaseConnected, user, showNotice]);
+
+  // Online / offline detection (Phase 9)
+  useEffect(() => {
+    const goOnline = () => {
+      setIsOffline(false);
+      refreshLiveSupabaseData();
+    };
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, [refreshLiveSupabaseData]);
+
+  // Mobile drawer: close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Mobile drawer: close when the window becomes desktop width
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setIsMenuOpen(false);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  // Mobile drawer: lock page scroll while open
+  useEffect(() => {
+    document.body.classList.toggle('drawer-open', isMenuOpen);
+    return () => document.body.classList.remove('drawer-open');
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (user) {
@@ -150,30 +219,36 @@ export default function App() {
 
     // Live Supabase persist if configured and user is signed in
     if (isSupabaseConnected && user) {
-      const dbPayload = {
-        full_name: leadData.full_name,
-        phone: leadData.phone,
-        email: leadData.email || null,
-        course_interest: leadData.course_interest,
-        source: leadData.source,
-        status: leadData.status,
-        notes: leadData.notes || null,
-        assigned_to: isValidUUID(leadData.assigned_to) ? leadData.assigned_to : user.id,
-        created_by: user.id
-      };
+      try {
+        const dbPayload = {
+          full_name: leadData.full_name,
+          phone: leadData.phone,
+          email: leadData.email || null,
+          course_interest: leadData.course_interest,
+          source: leadData.source,
+          status: leadData.status,
+          notes: leadData.notes || null,
+          assigned_to: isValidUUID(leadData.assigned_to) ? leadData.assigned_to : user.id,
+          created_by: user.id
+        };
 
-      const { data: dbLead, error } = await leadService.createLead(dbPayload);
-      if (dbLead) {
-        setLeads((prev) => [dbLead, ...prev.filter((l) => l.id !== localId)]);
-        await activityService.logActivity({
-          lead_id: dbLead.id,
-          actor_id: user.id,
-          activity_type: 'lead_created',
-          description: `New enquiry registered for ${dbLead.full_name} (${dbLead.course_interest}) via ${dbLead.source}`
-        });
-        refreshLiveSupabaseData();
-      } else if (error) {
-        console.error('Supabase lead insertion error:', error.message);
+        const { data: dbLead, error } = await leadService.createLead(dbPayload);
+        if (dbLead) {
+          setLeads((prev) => [dbLead, ...prev.filter((l) => l.id !== localId)]);
+          await activityService.logActivity({
+            lead_id: dbLead.id,
+            actor_id: user.id,
+            activity_type: 'lead_created',
+            description: `New enquiry registered for ${dbLead.full_name} (${dbLead.course_interest}) via ${dbLead.source}`
+          });
+          refreshLiveSupabaseData();
+        } else {
+          console.error('Supabase lead insertion error:', error?.message);
+          showNotice("Couldn't save the enquiry to the database. It may be lost if you refresh. Please try again.");
+        }
+      } catch (err) {
+        console.error('Supabase lead insertion failed:', err);
+        showNotice("Couldn't save the enquiry. Check your connection and try again.");
       }
     }
   };
@@ -186,11 +261,11 @@ export default function App() {
       prev.map((l) =>
         l.id === leadId
           ? {
-              ...l,
-              status: newStatus,
-              lost_reason: newStatus === 'Lost' ? (lostReason ?? l.lost_reason) : null,
-              updated_at: new Date().toISOString()
-            }
+            ...l,
+            status: newStatus,
+            lost_reason: newStatus === 'Lost' ? (lostReason ?? l.lost_reason) : null,
+            updated_at: new Date().toISOString()
+          }
           : l
       )
     );
@@ -199,8 +274,8 @@ export default function App() {
       newStatus === 'Lost'
         ? `Status updated to Lost. Reason: ${lostReason || 'Not specified'}`
         : newStatus === 'Converted'
-        ? `Enquiry Converted! Student ${targetLead.full_name} enrolled in ${targetLead.course_interest}.`
-        : `Status changed from ${targetLead.status} to ${newStatus}`;
+          ? `Enquiry Converted! Student ${targetLead.full_name} enrolled in ${targetLead.course_interest}.`
+          : `Status changed from ${targetLead.status} to ${newStatus}`;
 
     const newActivity: Activity = {
       id: `act-${Date.now()}`,
@@ -215,14 +290,21 @@ export default function App() {
 
     // Live Supabase update
     if (isSupabaseConnected && user && isValidUUID(leadId)) {
-      await leadService.updateLeadStatus(leadId, newStatus, lostReason);
-      await activityService.logActivity({
-        lead_id: leadId,
-        actor_id: user.id,
-        activity_type: 'status_changed',
-        description
-      });
-      refreshLiveSupabaseData();
+      try {
+        const res = await leadService.updateLeadStatus(leadId, newStatus, lostReason);
+        if (hasError(res)) throw new Error('Status update failed');
+        await activityService.logActivity({
+          lead_id: leadId,
+          actor_id: user.id,
+          activity_type: 'status_changed',
+          description
+        });
+        refreshLiveSupabaseData();
+      } catch (err) {
+        console.error('Status update failed:', err);
+        showNotice("Couldn't update the status on the server. Please try again.");
+        refreshLiveSupabaseData();
+      }
     }
   };
 
@@ -258,25 +340,32 @@ export default function App() {
 
     // Live Supabase persist
     if (isSupabaseConnected && user && isValidUUID(leadId)) {
-      const followUpPayload = {
-        lead_id: leadId,
-        assigned_to: isValidUUID(targetLead.assigned_to) ? targetLead.assigned_to : user.id,
-        due_at: new Date(dueAt).toISOString(),
-        note,
-        status: 'pending' as FollowUpStatus,
-        created_by: user.id
-      };
-      const { data: dbFollowUp } = await followUpService.createFollowUp(followUpPayload);
-      if (dbFollowUp) {
-        setFollowUps((prev) => [dbFollowUp, ...prev.filter((f) => f.id !== newFollowUp.id)]);
+      try {
+        const followUpPayload = {
+          lead_id: leadId,
+          assigned_to: isValidUUID(targetLead.assigned_to) ? targetLead.assigned_to : user.id,
+          due_at: new Date(dueAt).toISOString(),
+          note,
+          status: 'pending' as FollowUpStatus,
+          created_by: user.id
+        };
+        const { data: dbFollowUp } = await followUpService.createFollowUp(followUpPayload);
+        if (dbFollowUp) {
+          setFollowUps((prev) => [dbFollowUp, ...prev.filter((f) => f.id !== newFollowUp.id)]);
+        } else {
+          showNotice("Couldn't save the follow-up to the database. Please try again.");
+        }
+        await activityService.logActivity({
+          lead_id: leadId,
+          actor_id: user.id,
+          activity_type: 'follow_up_scheduled',
+          description: `Follow-up scheduled for ${new Date(dueAt).toLocaleString()}: "${note}"`
+        });
+        refreshLiveSupabaseData();
+      } catch (err) {
+        console.error('Follow-up save failed:', err);
+        showNotice("Couldn't save the follow-up. Check your connection and try again.");
       }
-      await activityService.logActivity({
-        lead_id: leadId,
-        actor_id: user.id,
-        activity_type: 'follow_up_scheduled',
-        description: `Follow-up scheduled for ${new Date(dueAt).toLocaleString()}: "${note}"`
-      });
-      refreshLiveSupabaseData();
     }
   };
 
@@ -288,10 +377,10 @@ export default function App() {
       prev.map((f) =>
         f.id === followUpId
           ? {
-              ...f,
-              status: nextStatus,
-              completed_at: completedAt
-            }
+            ...f,
+            status: nextStatus,
+            completed_at: completedAt
+          }
           : f
       )
     );
@@ -315,14 +404,21 @@ export default function App() {
       setActivities((prev) => [newActivity, ...prev]);
 
       if (isSupabaseConnected && user && isValidUUID(followUpId)) {
-        await followUpService.updateFollowUpStatus(followUpId, nextStatus);
-        await activityService.logActivity({
-          lead_id: followUpItem.lead_id,
-          actor_id: user.id,
-          activity_type: 'follow_up_completed',
-          description
-        });
-        refreshLiveSupabaseData();
+        try {
+          const res = await followUpService.updateFollowUpStatus(followUpId, nextStatus);
+          if (hasError(res)) throw new Error('Follow-up update failed');
+          await activityService.logActivity({
+            lead_id: followUpItem.lead_id,
+            actor_id: user.id,
+            activity_type: 'follow_up_completed',
+            description
+          });
+          refreshLiveSupabaseData();
+        } catch (err) {
+          console.error('Follow-up update failed:', err);
+          showNotice("Couldn't update the follow-up on the server. Please try again.");
+          refreshLiveSupabaseData();
+        }
       }
     }
   };
@@ -357,6 +453,15 @@ export default function App() {
           setAuthModalMode('signin');
           setIsAuthModalOpen(true);
         }}
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
+
+      {/* Mobile drawer overlay */}
+      <div
+        className={`sidebar-overlay ${isMenuOpen ? 'show' : ''}`}
+        onClick={() => setIsMenuOpen(false)}
+        aria-hidden="true"
       />
 
       {/* Main View Area */}
@@ -370,9 +475,47 @@ export default function App() {
             setAuthModalMode('signin');
             setIsAuthModalOpen(true);
           }}
+          onToggleMenu={() => setIsMenuOpen((o) => !o)}
+          menuOpen={isMenuOpen}
         />
 
         <ConfigWarning />
+
+        {/* Offline banner */}
+        {isOffline && (
+          <div
+            role="alert"
+            style={{
+              background: '#fef3c7',
+              color: '#92400e',
+              padding: '10px 24px',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}
+          >
+            <span>You appear to be offline. Changes may not save until you reconnect.</span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOffline(!navigator.onLine);
+                refreshLiveSupabaseData();
+              }}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 5,
+                border: '1px solid #92400e',
+                background: '#fff',
+                cursor: 'pointer'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Private Staff Portal Gate when unauthenticated and live Supabase connected */}
         {!user && isSupabaseConnected && !isGuestDemoMode ? (
@@ -501,6 +644,8 @@ export default function App() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '8px',
+                  flexWrap: 'wrap',
                   fontSize: '0.8rem',
                   color: '#475569'
                 }}
@@ -508,7 +653,7 @@ export default function App() {
                 <span>
                   <strong>Demo Mode Active:</strong> You are previewing with sample student data.
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -603,6 +748,58 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authModalMode}
       />
+
+      {/* Friendly error / recovery message */}
+      {notice && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          style={{
+            position: 'fixed',
+            bottom: 'max(16px, env(safe-area-inset-bottom))',
+            right: '16px',
+            zIndex: 2000,
+            maxWidth: 'min(420px, calc(100vw - 32px))',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+            padding: '12px 14px',
+            background: '#fff7ed',
+            color: '#9a3412',
+            border: '1px solid #fdba74',
+            borderRadius: '10px',
+            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.18)',
+            fontSize: '0.85rem',
+            lineHeight: 1.45
+          }}
+        >
+          <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ flex: 1 }}>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            aria-label="Dismiss message"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#9a3412',
+              padding: 0,
+              display: 'inline-flex'
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }

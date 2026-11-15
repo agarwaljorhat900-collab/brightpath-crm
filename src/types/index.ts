@@ -72,3 +72,24 @@ export interface DashboardMetrics {
   conversionRate: number; // percentage (0 - 100)
   overdueFollowUps: number;
 }
+
+export type TaskStatus = 'todo' | 'in_progress' | 'completed';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string | null;
+  assigned_to?: string | null;
+  created_by?: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_date?: string | null;
+  related_lead_id?: string | null;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+  // Joins
+  assignee?: Profile | null;
+  related_lead?: Lead | null;
+}

@@ -1,4 +1,4 @@
-import { Lead, FollowUp, Activity, Profile } from '../types';
+import { Lead, FollowUp, Activity, Profile, Task } from '../types';
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -198,5 +198,89 @@ export const MOCK_ACTIVITIES: Activity[] = [
     description: 'Marked as Lost. Reason: Joined college semester project instead.',
     created_at: '2026-11-05T09:45:00Z',
     actor: MOCK_PROFILES[1]
+  }
+];
+
+export const MOCK_TASKS: Task[] = [
+  {
+    id: 'task-1',
+    title: 'Call Aarav Sharma — batch timing & scholarship eligibility',
+    description: 'Confirm weekend vs weekday batch preference. Share scholarship criteria PDF.',
+    assigned_to: 'p-3',
+    created_by: 'p-1',
+    status: 'todo',
+    priority: 'urgent',
+    due_date: '2026-11-16',
+    related_lead_id: 'l-1',
+    created_at: '2026-11-14T09:00:00Z',
+    assignee: MOCK_PROFILES[2],
+    related_lead: MOCK_LEADS[0]
+  },
+  {
+    id: 'task-2',
+    title: 'Send Data Science course syllabus to Priya Patel',
+    description: 'Email the full 6-month Data Science & AI syllabus and batch schedule.',
+    assigned_to: 'p-3',
+    created_by: 'p-3',
+    status: 'in_progress',
+    priority: 'high',
+    due_date: '2026-11-15',
+    related_lead_id: 'l-2',
+    created_at: '2026-11-12T11:00:00Z',
+    assignee: MOCK_PROFILES[2],
+    related_lead: MOCK_LEADS[1]
+  },
+  {
+    id: 'task-3',
+    title: 'Prepare installment plan breakdown for Rohan Mehta',
+    description: 'Create a custom EMI schedule for the Cloud & DevOps Engineering course.',
+    assigned_to: 'p-2',
+    created_by: 'p-2',
+    status: 'todo',
+    priority: 'medium',
+    due_date: '2026-11-17',
+    related_lead_id: 'l-3',
+    created_at: '2026-11-10T15:00:00Z',
+    assignee: MOCK_PROFILES[1],
+    related_lead: MOCK_LEADS[2]
+  },
+  {
+    id: 'task-4',
+    title: 'Send welcome kit and account credentials to Ananya Gupta',
+    description: 'Dispatch portal login, batch WhatsApp group link, and welcome letter.',
+    assigned_to: 'p-3',
+    created_by: 'p-1',
+    status: 'completed',
+    priority: 'high',
+    due_date: '2026-11-09',
+    related_lead_id: 'l-4',
+    completed_at: '2026-11-09T14:30:00Z',
+    created_at: '2026-11-08T12:00:00Z',
+    assignee: MOCK_PROFILES[2],
+    related_lead: MOCK_LEADS[3]
+  },
+  {
+    id: 'task-5',
+    title: 'Monthly admission pipeline review meeting',
+    description: 'Compile stats for November batch. Present to director with conversion analysis.',
+    assigned_to: 'p-2',
+    created_by: 'p-1',
+    status: 'todo',
+    priority: 'medium',
+    due_date: '2026-11-20',
+    created_at: '2026-11-14T10:00:00Z',
+    assignee: MOCK_PROFILES[1]
+  },
+  {
+    id: 'task-6',
+    title: 'Update lead tracking sheet — Q4 targets',
+    description: 'Reconcile all November lead statuses and project December intake numbers.',
+    assigned_to: 'p-2',
+    created_by: 'p-2',
+    status: 'in_progress',
+    priority: 'low',
+    due_date: '2026-11-18',
+    created_at: '2026-11-13T09:30:00Z',
+    assignee: MOCK_PROFILES[1]
   }
 ];

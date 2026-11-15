@@ -7,7 +7,7 @@ import {
   GraduationCap,
   ShieldCheck,
   UserCheck,
-  Database
+  X
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +21,8 @@ interface SidebarProps {
   setCurrentRole: (role: UserRole) => void;
   userName: string;
   onOpenAuth: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,12 +33,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentRole,
   setCurrentRole,
   userName,
-  onOpenAuth
+  onOpenAuth,
+  isOpen,
+  onClose
 }) => {
   const { isSupabaseConnected, user } = useAuth();
 
+  const go = (tab: string) => {
+    setActiveTab(tab);
+    onClose?.();
+  };
+
   return (
-    <aside className="crm-sidebar">
+    <aside id="app-sidebar" className={`crm-sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand Header */}
       <div className="brand-header">
         <div className="brand-icon">
@@ -58,16 +67,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {isSupabaseConnected ? 'CLOUD' : 'DEMO'}
         </span>
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label="Close menu"
+          onClick={() => onClose?.()}
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="nav-section">
+      <nav className="nav-section" aria-label="Main navigation">
         <div className="nav-label">Main Navigation</div>
 
         <button
           type="button"
           className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => go('dashboard')}
         >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
@@ -76,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           className={`nav-item ${activeTab === 'leads' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leads')}
+          onClick={() => go('leads')}
         >
           <Users size={18} />
           <span>Student Enquiries</span>
@@ -86,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           className={`nav-item ${activeTab === 'followups' ? 'active' : ''}`}
-          onClick={() => setActiveTab('followups')}
+          onClick={() => go('followups')}
         >
           <CalendarCheck size={18} />
           <span>Follow-ups</span>
@@ -104,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           className={`nav-item ${activeTab === 'activities' ? 'active' : ''}`}
-          onClick={() => setActiveTab('activities')}
+          onClick={() => go('activities')}
         >
           <History size={18} />
           <span>Activity Log</span>
@@ -152,16 +169,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div
           className="user-profile"
-          onClick={onOpenAuth}
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            onOpenAuth();
+            onClose?.();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onOpenAuth();
+              onClose?.();
+            }
+          }}
           style={{ cursor: 'pointer' }}
           title="Click to manage account / sign in"
         >
           <div className="user-avatar">
-            {currentRole === 'admin' ? (
-              <ShieldCheck size={16} />
-            ) : (
-              <UserCheck size={16} />
-            )}
+            {currentRole === 'admin' ? <ShieldCheck size={16} /> : <UserCheck size={16} />}
           </div>
           <div className="user-info">
             <span className="user-name">{userName}</span>
@@ -177,8 +202,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {currentRole === 'admin'
                 ? 'Administrator'
                 : currentRole === 'manager'
-                ? 'Manager'
-                : 'Counsellor'}
+                  ? 'Manager'
+                  : 'Counsellor'}
             </span>
           </div>
         </div>
