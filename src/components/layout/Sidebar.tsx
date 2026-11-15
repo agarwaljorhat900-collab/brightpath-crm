@@ -165,8 +165,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div className="user-info">
             <span className="user-name">{userName}</span>
-            <span className="user-role" style={{ textTransform: 'capitalize' }}>
-              {currentRole} {user ? '(Cloud User)' : '(Demo)'}
+            <span
+              className="user-role"
+              style={{
+                textTransform: 'capitalize',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              {currentRole === 'admin'
+                ? 'Administrator'
+                : currentRole === 'manager'
+                ? 'Manager'
+                : 'Counsellor'}
             </span>
           </div>
         </div>
