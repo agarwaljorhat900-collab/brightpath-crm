@@ -575,6 +575,7 @@ export default function App() {
                   leads={accessibleLeads}
                   onToggleFollowUpStatus={handleToggleFollowUpStatus}
                   onSelectLead={handleSelectLeadFromAnywhere}
+                  onScheduleFollowUp={handleScheduleFollowUp}
                 />
               )}
 

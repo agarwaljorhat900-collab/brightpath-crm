@@ -132,12 +132,12 @@ $$\text{Develop} \longrightarrow \text{Test (Static/Build)} \longrightarrow \tex
   - [x] Verify automatic audit logging in `activities` upon lead creation and status changes.
   * *Acceptance Criteria*: Creating and editing enquiries persists in Supabase; counsellors cannot view unassigned enquiries.
 
-- [ ] **Phase 6: Follow-Up Scheduling & Overdue Engine**
-  - [ ] Connect `FollowUpsView` to `followUpsService.ts`.
-  - [ ] Implement follow-up scheduler modal (due date/time, note, counsellor).
-  - [ ] Build overdue engine (`status === 'pending' && due_at < now()`).
-  - [ ] Implement completion toggle (setting `completed_at` timestamp).
-  - [ ] Enable navigation from follow-up cards to enquiry detail drawer.
+- [x] **Phase 6: Follow-Up Scheduling & Overdue Engine**
+  - [x] Connect `FollowUpsView` to `followUpService.ts` with live PostgreSQL mutations.
+  - [x] Implement follow-up scheduler modal with quick time presets (+2h, Tomorrow, In 2 Days, Next Week).
+  - [x] Build real-time overdue engine with relative overdue badges (`Overdue by X days/hours`).
+  - [x] Implement completion toggle with `completed_at` timestamp synchronization.
+  - [x] Enable direct navigation from follow-up cards to enquiry detail records.
   * *Acceptance Criteria*: Overdue badge dynamically alerts user; completed follow-ups do not show as overdue; persistence verified.
 
 - [ ] **Phase 7: Activity Log & Audit Trail**
