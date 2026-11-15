@@ -5,17 +5,26 @@ import { useAuth } from '../../context/AuthContext';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: 'signin' | 'signup';
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'signin' }) => {
   const { signInWithPassword, signUpWithPassword, isSupabaseConnected, setDemoRole } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMsg(null);
+      setSuccessMsg(null);
+    }
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 

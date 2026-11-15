@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Lock, ShieldCheck, ArrowRight, Eye } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { ConfigWarning } from './components/common/ConfigWarning';
@@ -24,6 +25,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  const [isGuestDemoMode, setIsGuestDemoMode] = useState(false);
 
   const {
     user,
@@ -310,7 +313,10 @@ export default function App() {
         currentRole={currentRole}
         setCurrentRole={setDemoRole}
         userName={activeUserName}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthModalMode('signin');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* Main View Area */}
@@ -320,60 +326,238 @@ export default function App() {
           setSearchQuery={setSearchQuery}
           onOpenCreateLead={handleQuickAddEnquiry}
           currentRole={currentRole}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenAuthModal={() => {
+            setAuthModalMode('signin');
+            setIsAuthModalOpen(true);
+          }}
         />
 
         <ConfigWarning />
 
-        <div className="crm-content" style={{ padding: '24px 32px' }}>
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              leads={accessibleLeads}
-              followUps={accessibleFollowUps}
-              currentRole={currentRole}
-              onNavigateTab={setActiveTab}
-              onSelectLead={handleSelectLeadFromAnywhere}
-            />
-          )}
+        {/* Private Staff Portal Gate when unauthenticated and live Supabase connected */}
+        {!user && isSupabaseConnected && !isGuestDemoMode ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 'calc(100vh - 120px)',
+              padding: '24px'
+            }}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '44px 36px',
+                maxWidth: '480px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)'
+              }}
+            >
+              <div
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                  color: '#ffffff',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                  boxShadow: '0 8px 20px -4px rgba(79, 70, 229, 0.35)'
+                }}
+              >
+                <Lock size={28} />
+              </div>
 
-          {activeTab === 'leads' && (
-            <LeadsView
-              leads={accessibleLeads}
-              profiles={profiles}
-              followUps={accessibleFollowUps}
-              activities={accessibleActivities}
-              currentRole={currentRole}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onUpdateLeadStatus={handleUpdateLeadStatus}
-              onCreateLead={handleCreateLead}
-              onScheduleFollowUp={handleScheduleFollowUp}
-            />
-          )}
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 700, color: '#0f172a', margin: '0 0 10px' }}>
+                Private Staff Portal
+              </h2>
 
-          {activeTab === 'followups' && (
-            <FollowUpsView
-              followUps={accessibleFollowUps}
-              leads={accessibleLeads}
-              onToggleFollowUpStatus={handleToggleFollowUpStatus}
-              onSelectLead={handleSelectLeadFromAnywhere}
-            />
-          )}
+              <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 28px' }}>
+                BrightPath Academy CRM contains confidential student admission enquiries. Please sign in with your staff credentials to access your leads and follow-ups.
+              </p>
 
-          {activeTab === 'activities' && (
-            <ActivitiesView
-              activities={accessibleActivities}
-              leads={accessibleLeads}
-              onSelectLead={handleSelectLeadFromAnywhere}
-            />
-          )}
-        </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalMode('signin');
+                    setIsAuthModalOpen(true);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '13px',
+                    borderRadius: '8px',
+                    background: '#4f46e5',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    fontSize: '0.925rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <span>Sign In with Staff Account</span>
+                  <ArrowRight size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalMode('signup');
+                    setIsAuthModalOpen(true);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: '#ffffff',
+                    color: '#334155',
+                    fontWeight: 600,
+                    fontSize: '0.925rem',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Register New Counsellor Account
+                </button>
+              </div>
+
+              <div style={{ marginTop: '24px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsGuestDemoMode(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Explore in Workshop Demo Mode (Mock Records)
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {isGuestDemoMode && !user && (
+              <div
+                style={{
+                  background: '#f8fafc',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8rem',
+                  color: '#475569'
+                }}
+              >
+                <span>
+                  <strong>Demo Mode Active:</strong> You are previewing with sample student data.
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthModalMode('signin');
+                      setIsAuthModalOpen(true);
+                    }}
+                    style={{
+                      background: '#4f46e5',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '4px 10px',
+                      borderRadius: '5px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Sign In to Live Database
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsGuestDemoMode(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Return to Private Lock Screen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="crm-content" style={{ padding: '24px 32px' }}>
+              {activeTab === 'dashboard' && (
+                <DashboardView
+                  leads={accessibleLeads}
+                  followUps={accessibleFollowUps}
+                  currentRole={currentRole}
+                  onNavigateTab={setActiveTab}
+                  onSelectLead={handleSelectLeadFromAnywhere}
+                />
+              )}
+
+              {activeTab === 'leads' && (
+                <LeadsView
+                  leads={accessibleLeads}
+                  profiles={profiles}
+                  followUps={accessibleFollowUps}
+                  activities={accessibleActivities}
+                  currentRole={currentRole}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onUpdateLeadStatus={handleUpdateLeadStatus}
+                  onCreateLead={handleCreateLead}
+                  onScheduleFollowUp={handleScheduleFollowUp}
+                />
+              )}
+
+              {activeTab === 'followups' && (
+                <FollowUpsView
+                  followUps={accessibleFollowUps}
+                  leads={accessibleLeads}
+                  onToggleFollowUpStatus={handleToggleFollowUpStatus}
+                  onSelectLead={handleSelectLeadFromAnywhere}
+                />
+              )}
+
+              {activeTab === 'activities' && (
+                <ActivitiesView
+                  activities={accessibleActivities}
+                  leads={accessibleLeads}
+                  onSelectLead={handleSelectLeadFromAnywhere}
+                />
+              )}
+            </div>
+          </>
+        )}
       </main>
 
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authModalMode}
       />
     </div>
   );
