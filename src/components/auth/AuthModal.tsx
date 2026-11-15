@@ -192,18 +192,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
               style={{
                 background: '#fef2f2',
                 border: '1px solid #fecaca',
-                borderRadius: '6px',
-                padding: '10px 12px',
+                borderRadius: '8px',
+                padding: '12px 14px',
                 marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 color: '#b91c1c',
-                fontSize: '0.8rem'
+                fontSize: '0.825rem',
+                lineHeight: 1.5
               }}
             >
-              <AlertCircle size={16} />
-              <span>{errorMsg}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: errorMsg.toLowerCase().includes('email not confirmed') ? '6px' : '0' }}>
+                <AlertCircle size={16} />
+                <span>{errorMsg}</span>
+              </div>
+              {errorMsg.toLowerCase().includes('email not confirmed') && (
+                <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#7f1d1d' }}>
+                  Supabase requires email confirmation before signing in. To confirm instantly:
+                  <div style={{ background: '#1e293b', color: '#e2e8f0', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.72rem', marginTop: '6px', userSelect: 'all' }}>
+                    UPDATE auth.users SET email_confirmed_at = now() WHERE email = '{email.trim() || 'your-email'}';
+                  </div>
+                  <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#991b1b' }}>
+                    Tip: In Supabase Dashboard &rarr; <em>Auth &rarr; Providers &rarr; Email</em>, toggle off <strong>Confirm email</strong> to disable this requirement during development.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

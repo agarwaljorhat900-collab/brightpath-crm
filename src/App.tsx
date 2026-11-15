@@ -335,7 +335,10 @@ export default function App() {
     }
   };
 
-  const handleSelectLeadFromAnywhere = (_lead: Lead) => {
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+
+  const handleSelectLeadFromAnywhere = (lead: Lead) => {
+    setSelectedLeadId(lead.id);
     setActiveTab('leads');
   };
 
@@ -566,6 +569,8 @@ export default function App() {
                   onUpdateLeadStatus={handleUpdateLeadStatus}
                   onCreateLead={handleCreateLead}
                   onScheduleFollowUp={handleScheduleFollowUp}
+                  selectedLeadId={selectedLeadId}
+                  onClearSelectedLead={() => setSelectedLeadId(null)}
                 />
               )}
 

@@ -28,6 +28,8 @@ interface LeadsViewProps {
   onUpdateLeadStatus: (leadId: string, newStatus: LeadStatus, lostReason?: string) => void;
   onCreateLead: (leadData: Omit<Lead, 'id' | 'created_at'>) => void;
   onScheduleFollowUp: (leadId: string, dueAt: string, note: string) => void;
+  selectedLeadId?: string | null;
+  onClearSelectedLead?: () => void;
 }
 
 export const LeadsView: React.FC<LeadsViewProps> = ({
@@ -40,7 +42,9 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
   setSearchQuery,
   onUpdateLeadStatus,
   onCreateLead,
-  onScheduleFollowUp
+  onScheduleFollowUp,
+  selectedLeadId,
+  onClearSelectedLead
 }) => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -50,6 +54,21 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
   // Modals & Drawers
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Sync selectedLead when selectedLeadId changes from external navigation (Dashboard, etc.)
+  React.useEffect(() => {
+    if (selectedLeadId) {
+      const match = leads.find((l) => l.id === selectedLeadId);
+      if (match) {
+        setSelectedLead(match);
+      }
+    }
+  }, [selectedLeadId, leads]);
+
+  const handleCloseDetail = () => {
+    setSelectedLead(null);
+    onClearSelectedLead?.();
+  };
   const [lostReasonModalLead, setLostReasonModalLead] = useState<Lead | null>(null);
   const [lostReasonInput, setLostReasonInput] = useState('');
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
@@ -595,7 +614,7 @@ export const LeadsView: React.FC<LeadsViewProps> = ({
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>{selectedLead.full_name}</h2>
                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Enquiry ID: {selectedLead.id}</span>
               </div>
-              <button type="button" onClick={() => setSelectedLead(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+              <button type="button" onClick={handleCloseDetail} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
                 <X size={20} />
               </button>
             </div>
