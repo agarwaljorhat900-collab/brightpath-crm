@@ -97,39 +97,39 @@ $$\text{Develop} \longrightarrow \text{Test (Static/Build)} \longrightarrow \tex
 
 ## 4. Phased Implementation Roadmap & Execution Checklist
 
-- [ ] **Phase 1: Workspace Hygiene & Git Baseline**
-  - [ ] Stage existing modular TypeScript code, views, and configuration.
-  - [ ] Run static checks (`npm run typecheck`, `npm run build`).
-  - [ ] Commit working baseline: `git commit -m "feat: establish modular TypeScript architecture"`.
-  - [ ] *Acceptance Criteria*: `git status` reports working tree clean; production build succeeds.
+- [x] **Phase 1: Workspace Hygiene & Git Baseline**
+  - [x] Stage existing modular TypeScript code, views, and configuration.
+  - [x] Run static checks (`npm run typecheck`, `npm run build`).
+  - [x] Commit working baseline: `git commit -m "feat: establish modular TypeScript architecture"`.
+  - [x] *Acceptance Criteria*: `git status` reports working tree clean; production build succeeds.
 
-- [ ] **Phase 2: Database Design & Supabase Schema**
-  - [ ] Create `supabase/migrations/20261115000000_init_schema.sql` containing tables, check constraints, indexes, triggers, and RLS policies.
-  - [ ] Create `supabase/seed.sql` with realistic educational sample records.
-  - [ ] Document execution steps for Supabase SQL Editor.
+- [x] **Phase 2: Database Design & Supabase Schema**
+  - [x] Create `supabase/migrations/20261115000000_init_schema.sql` containing tables, check constraints, indexes, triggers, and RLS policies.
+  - [x] Create `supabase/seed.sql` with realistic educational sample records.
+  - [x] Document execution steps for Supabase SQL Editor.
   * *Acceptance Criteria*: SQL executes cleanly in Supabase; all 4 tables exist with RLS enabled; RLS prevents cross-role data leaks.
 
-- [ ] **Phase 3: Supabase Client & Service Abstraction Layer**
-  - [ ] Update `src/lib/supabaseClient.ts` with explicit connection diagnostics.
-  - [ ] Create `src/services/leadsService.ts` (CRUD, status mutators).
-  - [ ] Create `src/services/followUpsService.ts` (scheduler, completion toggles).
-  - [ ] Create `src/services/activitiesService.ts` (audit timeline fetcher).
-  - [ ] Create `src/services/profilesService.ts` (counsellor assignment list).
+- [x] **Phase 3: Supabase Client & Service Abstraction Layer**
+  - [x] Update `src/lib/supabaseClient.ts` with explicit connection diagnostics.
+  - [x] Create `src/services/leadsService.ts` (CRUD, status mutators).
+  - [x] Create `src/services/followUpsService.ts` (scheduler, completion toggles).
+  - [x] Create `src/services/activitiesService.ts` (audit timeline fetcher).
+  - [x] Create `src/services/profileService.ts` (counsellor assignment list).
   * *Acceptance Criteria*: All database operations are cleanly encapsulated in typed service files; UI components make no raw database calls.
 
-- [ ] **Phase 4: Authentication & User Role Lifecycle**
-  - [ ] Create `src/context/AuthContext.tsx` with session listener (`onAuthStateChange`).
-  - [ ] Build `src/components/auth/LoginView.tsx` / `AuthModal.tsx` for email/password sign-in and sign-up.
-  - [ ] Hydrate active user profile and enforce role-based access without client-side role escalation.
-  - [ ] Document Admin Bootstrap Procedure via Supabase SQL.
+- [x] **Phase 4: Authentication & User Role Lifecycle**
+  - [x] Create `src/context/AuthContext.tsx` with session listener (`onAuthStateChange`).
+  - [x] Build `src/components/auth/LoginView.tsx` / `AuthModal.tsx` for email/password sign-in and sign-up.
+  - [x] Hydrate active user profile and enforce role-based access without client-side role escalation.
+  - [x] Document Admin Bootstrap Procedure via Supabase SQL.
   * *Acceptance Criteria*: Users can log in/out; session persists across browser refresh; correct role permissions are loaded.
 
-- [ ] **Phase 5: Student Enquiry (Lead) Management System**
-  - [ ] Connect `LeadsView` to `leadsService.ts`.
-  - [ ] Implement Create Enquiry modal with input sanitization and validation.
-  - [ ] Implement real-time search and multi-filtering (Status, Source, Counsellor).
-  - [ ] Implement stage transitions (`New` -> `Contacted` -> `Qualified` -> `Converted` / `Lost` with mandatory lost reason).
-  - [ ] Verify automatic audit logging in `activities` upon lead creation and status changes.
+- [x] **Phase 5: Student Enquiry (Lead) Management System**
+  - [x] Connect `LeadsView` to `leadService.ts` for live PostgreSQL persistence.
+  - [x] Implement Create Enquiry modal with input sanitization and UUID validation.
+  - [x] Implement real-time search and multi-filtering (Status, Source, Counsellor).
+  - [x] Implement stage transitions (`New` -> `Contacted` -> `Qualified` -> `Converted` / `Lost` with mandatory lost reason).
+  - [x] Verify automatic audit logging in `activities` upon lead creation and status changes.
   * *Acceptance Criteria*: Creating and editing enquiries persists in Supabase; counsellors cannot view unassigned enquiries.
 
 - [ ] **Phase 6: Follow-Up Scheduling & Overdue Engine**
