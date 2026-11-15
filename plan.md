@@ -140,10 +140,12 @@ $$\text{Develop} \longrightarrow \text{Test (Static/Build)} \longrightarrow \tex
   - [x] Enable direct navigation from follow-up cards to enquiry detail records.
   * *Acceptance Criteria*: Overdue badge dynamically alerts user; completed follow-ups do not show as overdue; persistence verified.
 
-- [ ] **Phase 7: Activity Log & Audit Trail**
-  - [ ] Connect `ActivitiesView` to `activitiesService.ts`.
-  - [ ] Display chronological activity timeline with actor attribution and time-ago formatting.
-  - [ ] Map activity types to descriptive icons and deep-links to associated enquiries.
+- [x] **Phase 7: Activity Log & Audit Trail**
+  - [x] Connect `ActivitiesView` to `activityService.ts` for live PostgreSQL audit logging.
+  - [x] Implement continuous vertical timeline track with color-coded event nodes.
+  - [x] Add dynamic event category filters (Stage Updates, New Enquiries, Follow-ups) and live text search.
+  - [x] Add actor attribution, role badges, and relative time-ago calculations (e.g. `2h ago`).
+  - [x] Enable student deep-linking directly from audit cards.
   * *Acceptance Criteria*: Every enquiry and follow-up mutation produces a visible audit record; RLS scoping is respected.
 
 - [ ] **Phase 8: Real-Time Analytics Dashboard & Metric Reconciliation**
